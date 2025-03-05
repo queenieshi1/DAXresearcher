@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAX函数查询系统</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+        }
+
+        body {
+            background: linear-gradient(135deg, #bdc3c7, #2c3e50);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+            margin: 30px 0;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid var(--primary);
+            border-radius: 25px;
+            box-sizing: border-box;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background: var(--secondary);
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        #randomResult {
+            font-size: 24px;
+            text-align: center;
+            margin: 30px 0;
+            min-height: 40px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            padding: 8px 16px;
+        }
+
+        #suggestions {
+            position: absolute;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            z-index: 999;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .suggestion-item:hover {
+            background: #f0f0f0;
+        }
+
+        @media (max-width: 480px) {
+            #randomResult {
+                font-size: 18px;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="输入DAX函数名称...">
+            <div id="suggestions"></div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="toggleRandom()" id="randomBtn">开始随机抽查</button>
+            <button onclick="showDetails(currentRandom)">查看详细介绍</button>
+        </div>
+
+        <div id="randomResult"></div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="funcTitle"></h2>
+            <h3>功能</h3>
+            <p id="funcDesc"></p>
+            <h3>语法</h3>
+            <pre id="funcSyntax"></pre>
+            <h3>使用场景</h3>
+            <p id="funcUsage"></p>
+            <button class="close-btn" onclick="closeModal()">关闭弹窗</button>
+        </div>
+    </div>
+
+<script>
+// DAX函数数据示例（需要补充完整数据）
+const daxFunctions = [
+    {
+        name: "SUM",
+        description: "对列中的所有数字求和",
+        syntax: "SUM(<column>)",
+        usage: "用于数值型列的快速求和计算"
+    },
+    {
+        name: "CALCULATE",
+        description: "在修改的筛选器上下文中计算表达式",
+        syntax: "CALCULATE(<expression>, <filter1>, ...)",
+        usage: "动态修改筛选上下文进行计算"
+    }
+    // 补充更多DAX函数数据...
+];
+
+let isRandomActive = false;
+let intervalId = null;
+let currentRandom = null;
+
+// 搜索建议功能
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const input = e.target.value.toLowerCase();
+    const suggestions = document.getElementById('suggestions');
+    suggestions.innerHTML = '';
+    
+    if(input) {
+        const filtered = daxFunctions.filter(func => 
+            func.name.toLowerCase().includes(input)
+        );
+        
+        filtered.forEach(func => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.textContent = func.name;
+            div.onclick = () => showDetails(func);
+            suggestions.appendChild(div);
+        });
+    }
+});
+
+// 随机抽查功能
+function toggleRandom() {
+    const btn = document.getElementById('randomBtn');
+    if(!isRandomActive) {
+        intervalId = setInterval(() => {
+            currentRandom = daxFunctions[Math.floor(Math.random() * daxFunctions.length)];
+            document.getElementById('randomResult').textContent = currentRandom.name;
+        }, 100);
+        btn.textContent = '暂停滚动';
+    } else {
+        clearInterval(intervalId);
+        btn.textContent = '继续滚动';
+    }
+    isRandomActive = !isRandomActive;
+}
+
+// 显示详情弹窗
+function showDetails(func) {
+    if(!func) return;
+    document.getElementById('modal').style.display = 'block';
+    document.getElementById('funcTitle').textContent = func.name;
+    document.getElementById('funcDesc').textContent = func.description;
+    document.getElementById('funcSyntax').textContent = func.syntax;
+    document.getElementById('funcUsage').textContent = func.usage;
+}
+
+// 关闭弹窗
+function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+}
+
+// 点击外部关闭弹窗
+window.onclick = function(e) {
+    if(e.target == document.getElementById('modal')) {
+        closeModal();
+    }
+}
+</script>
+</body>
+</html>
